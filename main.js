@@ -624,3 +624,103 @@ function () {
     if (toolEls.runChip) toolEls.runChip.classList.toggle("live", fakeRunning);
     if (toolEls.runChipText) toolEls.runChipText.textContent = fakeRunning ? "LIVE" : "IDLE";
   }
+    runPanelAnim(frames, 620, "none", function () {
+      panel.classList.remove("morphing");
+      panel.classList.add("boot");
+      resetPanelMotion();
+    });
+  }
+
+  function closePanel() {
+    ensureMounted();
+    if (panelBusy) recoverPanelShell();
+    if (panel.hidden) return;
+    var raw = morphFrames();
+    var frames = null;
+    var i;
+    if (raw) {
+      frames = [];
+      for (i = raw.length - 1; i >= 0; i--) {
+        frames.push({
+          offset: 1 - raw[i].offset,
+          transform: raw[i].transform,
+          borderRadius: raw[i].borderRadius,
+          filter: raw[i].filter,
+          easing: raw[i].easing,
+        });
+      }
+    }
+    panel.classList.remove("boot");
+    panel.classList.add("morphing");
+    runPanelAnim(frames, 480, "forwards", function () {
+      panel.getAnimations().forEach(function (anim) {
+        try { anim.cancel(); } catch (e) {}
+      });
+      panel.classList.remove("morphing");
+      resetPanelMotion();
+      panel.hidden = true;
+      fab.classList.remove("away");
+      fab.classList.remove("pop");
+      void fab.offsetWidth;
+      fab.classList.add("pop");
+    });
+  }
+
+  var drag = null;
+  var panelDrag = null;
+
+  head.addEventListener("pointerdown", function (event) {
+    ensureMounted();
+    if (event.button || panel.hidden) return;
+    if (panelBusy) recoverPanelShell();
+    event.preventDefault();
+    panelDrag = {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      ox: pos.x,
+      oy: pos.y,
+      moved: false,
+      target: event.target,
+    };
+    head.classList.add("dragging");
+  });
+
+  fab.addEventListener("pointerdown", function (event) {
+    liftWidget();
+    if (event.button) return;
+    if (panelBusy) recoverPanelShell();
+    event.preventDefault();
+    drag = { id: event.pointerId, x: event.clientX, y: event.clientY, ox: pos.x, oy: pos.y, moved: false };
+    fab.classList.add("dragging");
+  });
+  window.addEventListener("pointermove", function (event) {
+    if (panelDrag && event.pointerId === panelDrag.id) {
+      var pdx = event.clientX - panelDrag.x;
+      var pdy = event.clientY - panelDrag.y;
+      if (!panelDrag.moved && Math.hypot(pdx, pdy) < 4) return;
+      panelDrag.moved = true;
+      place(panelDrag.ox + pdx, panelDrag.oy + pdy);
+      return;
+    }
+    if (!drag || event.pointerId !== drag.id) return;
+    var dx = event.clientX - drag.x;
+    var dy = event.clientY - drag.y;
+    if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+    drag.moved = true;
+    place(drag.ox + dx, drag.oy + dy);
+  }, true);
+  window.addEventListener("pointerup", function (event) {
+    if (panelDrag && event.pointerId === panelDrag.id) {
+      var pmoved = panelDrag.moved;
+      var pt = panelDrag.target;
+      panelDrag = null;
+      head.classList.remove("dragging");
+      if (pmoved) {
+        try { localStorage.setItem("qxzr_pos", JSON.stringify(pos)); } catch (e) {}
+        return;
+      }
+      if (mini.contains(pt)) closePanel();
+      return;
+    }
+    
