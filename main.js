@@ -493,4 +493,134 @@ function () {
     '<div class="grid"></div><i class="sweep"></i><i class="pk pk1"></i><i class="pk pk2"></i><i class="pk pk3"></i><i class="pk pk4"></i>' +
     '<div class="head row" style="--d:0"><div class="mini" title="à¦›à§‹à¦Ÿ à¦•à¦°à§à¦¨"><img alt="" draggable="false"></div><div><div class="ttl">' + APP + '</div><div class="sub">ROUND CONTROL</div></div><span class="chip">IDLE</span></div>' +
     '<div class="body"></div></div>';
-  
+  var $ = function (sel) { return root.querySelector(sel); };
+  var fab = $(".fab");
+  var tile = $(".tile");
+  var panel = $(".panel");
+  var body = $(".body");
+  var chip = $(".chip");
+  var head = $(".head");
+  var mini = $(".mini");
+  var panelBusy = false;
+  var panelBusySince = 0;
+  var ROBO = "cubic-bezier(.8, 0, .2, 1)";
+  var imgs = root.querySelectorAll("img");
+  for (var i = 0; i < imgs.length; i++) imgs[i].src = ORIGIN + "/logo.jpg";
+
+  function setLive(on) {
+    fab.classList.toggle("live", on);
+    chip.classList.toggle("live", on);
+    chip.textContent = on ? "LIVE" : "IDLE";
+  }
+
+  function clear(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
+  }
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  function markPanelRows() {
+    var i;
+    var kids = body.children;
+    for (i = 0; i < kids.length; i++) {
+      kids[i].classList.add("row");
+      kids[i].style.setProperty("--d", String(i + 1));
+    }
+  }
+
+  function liftWidget() {
+    var parent = document.body || document.documentElement;
+    if (!parent) return;
+    if (host.hasAttribute("inert")) host.removeAttribute("inert");
+    try {
+      host.inert = false;
+    } catch (e) {}
+    host.style.zIndex = "2147483647";
+    if (!host.isConnected) parent.appendChild(host);
+    else if (parent.lastElementChild !== host) parent.appendChild(host);
+  }
+
+  function ensureMounted() {
+    liftWidget();
+  }
+
+  function clearDragState() {
+    drag = null;
+    panelDrag = null;
+    fab.classList.remove("dragging");
+    head.classList.remove("dragging");
+  }
+
+  function recoverPanelShell() {
+    panelBusy = false;
+    panelBusySince = 0;
+    clearDragState();
+    panel.getAnimations().forEach(function (anim) {
+      try { anim.cancel(); } catch (e) {}
+    });
+    resetPanelMotion();
+    panel.classList.remove("morphing");
+    if (panel.hidden) {
+      fab.classList.remove("away");
+    } else {
+      fab.classList.add("away");
+      panel.classList.add("boot");
+    }
+  }
+
+  function morphFrames() {
+    var t = tile.getBoundingClientRect();
+    var p = panel.getBoundingClientRect();
+    if (!t.width || !t.height || !p.width || !p.height) return null;
+    var sx = t.width / p.width;
+    var sy = t.height / p.height;
+    var dx = t.left - p.left;
+    var dy = t.top - p.top;
+    return [
+      { offset: 0, transform: "translate(" + dx + "px," + dy + "px) scale(" + sx + "," + sy + ")", borderRadius: "16px", filter: "brightness(2.2) saturate(1.5)", easing: ROBO },
+      { offset: 0.45, transform: "translate(0px," + dy + "px) scale(1," + sy + ")", borderRadius: "14px", filter: "brightness(1.5)", easing: "linear" },
+      { offset: 0.55, transform: "translate(0px," + dy + "px) scale(1," + sy + ")", borderRadius: "14px", filter: "brightness(1.5)", easing: ROBO },
+      { offset: 0.85, transform: "translate(0px,0px) scale(1,1.03)", borderRadius: "18px", filter: "brightness(1.1)", easing: "ease-out" },
+      { offset: 1, transform: "translate(0px,0px) scale(1,1)", borderRadius: "18px", filter: "brightness(1)" },
+    ];
+  }
+
+  function resetPanelMotion() {
+    panel.style.transform = "";
+    panel.style.borderRadius = "";
+    panel.style.filter = "";
+  }
+
+  function fmtAsset(a) {
+    var otc = /_otc$/i.test(a);
+    var name = a.replace(/_otc$/i, "");
+    if (/^[A-Z]{6}$/.test(name)) name = name.slice(0, 3) + "/" + name.slice(3);
+    return otc ? name + " (OTC)" : name;
+  }
+
+  function loadRoundUi() {
+    try {
+      var raw = localStorage.getItem(UI_ROUND_KEY);
+      if (raw) uiRound = Object.assign(uiRound, JSON.parse(raw));
+    } catch (e) {}
+  }
+
+  function saveRoundUi() {
+    try {
+      localStorage.setItem(UI_ROUND_KEY, JSON.stringify(uiRound));
+    } catch (e) {}
+  }
+
+  function updateRoundBtns(toolEls) {
+    if (!toolEls) return;
+    toolEls.start.disabled = fakeRunning;
+    toolEls.stop.disabled = !fakeRunning;
+    fab.classList.toggle("running", fakeRunning);
+    if (toolEls.runChip) toolEls.runChip.classList.toggle("live", fakeRunning);
+    if (toolEls.runChipText) toolEls.runChipText.textContent = fakeRunning ? "LIVE" : "IDLE";
+  }
