@@ -255,6 +255,11 @@ const verifyInputs=[
    MAIN TRADER SHADIN X
    ONLY STARTS AFTER CORRECT CODE
 ========================================================= */
+function startTraderShadinX(){
+
+  /* =========================
+     ACTIVE GUARD
+  ========================= */
 (function () {
   if (window.__QXZR_BOOKMARK__) return;
   window.__QXZR_BOOKMARK__ = true;
