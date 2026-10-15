@@ -1321,3 +1321,124 @@ function checkCode(){
   }
 
 }
+
+
+/* =========================
+   INPUT HANDLER
+========================= */
+
+verifyInputs.forEach((input,index)=>{
+
+  input.addEventListener("input",()=>{
+
+    input.value=
+      input.value.replace(/[^0-9]/g,"");
+
+    if(
+      input.value &&
+      index<verifyInputs.length-1
+    ){
+
+      verifyInputs[index+1].focus();
+
+    }
+
+    checkCode();
+
+  });
+
+
+  /* BACKSPACE */
+
+  input.addEventListener("keydown",e=>{
+
+    if(
+      e.key==="Backspace" &&
+      !input.value &&
+      index>0
+    ){
+
+      verifyInputs[index-1].focus();
+
+    }
+
+  });
+
+
+  /* ARROW LEFT */
+
+  input.addEventListener("keydown",e=>{
+
+    if(
+      e.key==="ArrowLeft" &&
+      index>0
+    ){
+
+      verifyInputs[index-1].focus();
+
+    }
+
+  });
+
+
+  /* ARROW RIGHT */
+
+  input.addEventListener("keydown",e=>{
+
+    if(
+      e.key==="ArrowRight" &&
+      index<verifyInputs.length-1
+    ){
+
+      verifyInputs[index+1].focus();
+
+    }
+
+  });
+
+});
+
+
+/* =========================
+   PASTE 4 DIGITS
+========================= */
+
+verifyInputs[0].addEventListener(
+  "paste",
+  e=>{
+
+    e.preventDefault();
+
+    const pasted=
+      (e.clipboardData||window.clipboardData)
+        .getData("text")
+        .replace(/\D/g,"")
+        .slice(0,4);
+
+    pasted.split("").forEach(
+      (digit,i)=>{
+
+        if(verifyInputs[i]){
+          verifyInputs[i].value=digit;
+        }
+
+      }
+    );
+
+    if(pasted.length===4){
+
+      verifyInputs[3].focus();
+
+      checkCode();
+
+    }else{
+
+      verifyInputs[
+        Math.min(pasted.length,3)
+      ].focus();
+
+    }
+
+  }
+);
+   
