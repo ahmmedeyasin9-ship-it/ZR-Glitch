@@ -1441,4 +1441,11 @@ verifyInputs[0].addEventListener(
 
   }
 );
-   
+
+/* =========================
+   START VERIFICATION
+========================= */
+
+verifyInputs[0].focus();
+
+})();   
