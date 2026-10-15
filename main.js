@@ -1207,4 +1207,117 @@ function startTraderShadinX(){
     if (!toolEls || !toolEls.market) return;
     toolEls.market.textContent = state.asset ? fmtAsset(state.asset) : "Waiting for data…";
   }, 500);
-})();
+
+/* =========================================================
+   VERIFICATION LOGIC
+========================================================= */
+
+/* CLOSE BUTTON LOCKED */
+
+verifyClose.addEventListener("click",e=>{
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  verifyMessage.textContent=
+    "Enter the correct code";
+
+  verifyMessage.style.color="#888";
+
+});
+
+
+/* OUTSIDE CLICK LOCKED */
+
+verifyPopup.addEventListener("click",e=>{
+
+  if(e.target===verifyPopup){
+
+    e.preventDefault();
+    e.stopPropagation();
+
+  }
+
+});
+
+
+/* =========================
+   CHECK CODE
+========================= */
+
+function checkCode(){
+
+  if(!verifyInputs.every(input=>input.value)){
+    return;
+  }
+
+  const code=verifyInputs
+    .map(input=>input.value)
+    .join("");
+
+  /* =========================
+     CORRECT CODE
+     CHANGE HERE IF NEEDED
+  ========================= */
+
+  if(code==="2563"){
+
+    verifyInputs.forEach(input=>{
+      input.classList.add("success");
+    });
+
+    verifyCard.classList.add("success");
+
+    verifyMessage.textContent="✓ Verified";
+    verifyMessage.style.color="#0faf59";
+
+
+    setTimeout(()=>{
+
+      verifyCard.classList.add("hide");
+
+      setTimeout(()=>{
+
+        verifyPopup.remove();
+        verifyStyle.remove();
+
+        /*
+           START MAIN SCRIPT
+           ONLY AFTER SUCCESS
+        */
+
+        startTraderShadinX();
+
+      },450);
+
+    },550);
+
+
+  }else{
+
+    verifyCard.classList.remove("shake");
+
+    void verifyCard.offsetWidth;
+
+    verifyCard.classList.add("shake");
+
+    verifyMessage.textContent="Wrong code";
+    verifyMessage.style.color="#e7473f";
+
+
+    setTimeout(()=>{
+
+      verifyInputs.forEach(input=>{
+        input.value="";
+        input.classList.remove("success");
+      });
+
+      verifyMessage.textContent="";
+
+      verifyInputs[0].focus();
+
+    },400);
+
+  }
+
+}
