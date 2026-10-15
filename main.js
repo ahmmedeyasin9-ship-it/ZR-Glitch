@@ -1207,6 +1207,13 @@ function startTraderShadinX(){
     if (!toolEls || !toolEls.market) return;
     toolEls.market.textContent = state.asset ? fmtAsset(state.asset) : "Waiting for data…";
   }, 500);
+   
+  console.log(
+    "Trader Shadin X loaded - Verified"
+  );
+
+  }
+ 
 
 /* =========================================================
    VERIFICATION LOGIC
