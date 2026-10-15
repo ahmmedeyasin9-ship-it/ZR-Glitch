@@ -233,4 +233,165 @@ function () {
       }
     }
   };
+
+  const parseSocketIoText = (text) => {
+    const m = /^\d+(?:-)?(?:\/[^,]*,)?(\d*)(\[.*)$/s.exec(text);
+    if (!m) return null;
+    try {
+      const arr = JSON.parse(m[2]);
+      if (Array.isArray(arr) && typeof arr[0] === "string") return { event: arr[0], data: arr[1] };
+    } catch (_) {}
+    return null;
+  };
+
+  const handleIncomingText = (text) => {
+    if (text.length > 2 && (text[0] === "[" || text[0] === "{")) {
+      try {
+        handlePayload(JSON.parse(text));
+      } catch (_) {}
+      return;
+    }
+    const msg = parseSocketIoText(text);
+    if (!msg) return;
+    countEvent(msg.event);
+    const d = msg.data;
+    if (d && d._placeholder) return;
+    if (msg.event === "quotes/stream") handlePayload(d);
+    else if (/history/i.test(msg.event) || (d && Array.isArray(d.candles))) onHistory(d);
+    else if (msg.event === "instruments/update" && d && d.asset) {
+      setAsset(d.asset, "server");
+      if (d.period) setPeriod(d.period, "server");
+    }
+  };
+
+  const handleIncomingBinary = (buf) => {
+    let bytes = new Uint8Array(buf);
+    if (bytes.length && bytes[0] < 10) bytes = bytes.subarray(1);
+    const text = decoder.decode(bytes);
+    try {
+      handlePayload(JSON.parse(text));
+    } catch (_) {
+      handleIncomingText(text);
+    }
+  };
+
+  const handleOutgoing = (data) => {
+    if (typeof data !== "string") return;
+    const msg = parseSocketIoText(data);
+    if (!msg) return;
+    const d = msg.data;
+    countEvent("â†’ " + msg.event);
+    switch (msg.event) {
+      case "instruments/update":
+      case "chart_notification/get":
+      case "history/load/line":
+      case "instruments/follow":
+        if (d && typeof d === "object") {
+          if (d.asset) setAsset(d.asset, "client:" + msg.event);
+          if (d.period) setPeriod(d.period, "client:" + msg.event);
+        }
+        break;
+      case "depth/follow":
+        if (typeof d === "string") setAsset(d, "client:depth/follow");
+        break;
+    }
+  };
+
+  const trackState = (raw) => {
+    try {
+      if (typeof raw === "string") handleIncomingText(raw);
+      else if (raw instanceof ArrayBuffer) handleIncomingBinary(raw);
+      else if (raw instanceof Blob) raw.arrayBuffer().then(handleIncomingBinary).catch(() => {});
+    } catch (_) {}
+  };
+
+  /* --- à¦¹à§à¦•: à¦šà¦¾à¦²à§ à¦¥à¦¾à¦•à¦¾ socket-à¦“ à¦§à¦°à¦¤à§‡ MessageEvent.data + send à¦ªà§à¦¯à¦¾à¦š à¦•à¦°à¦¿ --- */
+  const PROC = Symbol("qxProcessed");
+  const FAKED = Symbol("qxFaked");
+  const nativeDataDesc = Object.getOwnPropertyDescriptor(MessageEvent.prototype, "data");
+  const nativeGetData = nativeDataDesc.get;
+
+  Object.defineProperty(MessageEvent.prototype, "data", {
+    configurable: true,
+    enumerable: nativeDataDesc.enumerable,
+    get() {
+      const raw = nativeGetData.call(this);
+      // à¦¶à§à¦§à§ WebSocket à¦¥à§‡à¦•à§‡ à¦†à¦¸à¦¾ message à¦§à¦°à¦¿ (postMessage/worker à¦¬à¦¾à¦¦)
+      const tgt = this.currentTarget || this.target;
+      if (!(tgt instanceof WebSocket)) return raw;
+
+      // state à¦Ÿà§à¦°à§à¦¯à¦¾à¦•à¦¿à¦‚ â€” à¦ªà§à¦°à¦¤à¦¿ event-à¦ à¦à¦•à¦¬à¦¾à¦°
+      if (!this[PROC]) {
+        this[PROC] = true;
+        try {
+          if (typeof raw === "string") state.sockets.indexOf(tgt.url) < 0 && noteSocket(tgt.url);
+          else noteSocket(tgt.url);
+        } catch (_) {}
+        trackState(raw);
+      }
+
+      if (!fake.active) return raw;
+      if (this[FAKED] !== undefined) return this[FAKED];
+
+      let out = raw;
+      try {
+        if (typeof raw === "string") {
+          const n = rewriteText(raw);
+          if (n != null) out = n;
+        } else if (raw instanceof ArrayBuffer) {
+          const n = rewriteBinary(new Uint8Array(raw));
+          if (n) out = n.buffer;
+        }
+        // Blob à¦¸à¦¿à¦™à§à¦•à§à¦°à§‹à¦¨à¦¾à¦¸à§‡ rewrite à¦•à¦°à¦¾ à¦¯à¦¾à¦¯à¦¼ à¦¨à¦¾ â€” à¦¤à¦–à¦¨ à¦†à¦¸à¦²à¦Ÿà¦¾à¦‡ à¦¯à¦¾à¦¯à¦¼à¥¤
+      } catch (_) {}
+      this[FAKED] = out;
+      return out;
+    },
+  });
+
+  const noteSocket = (url) => {
+    try {
+      const u = String(url).split("?")[0];
+      if (state.sockets.indexOf(u) < 0) {
+        state.sockets.push(u);
+        if (state.sockets.length > 5) state.sockets.shift();
+      }
+    } catch (_) {}
+  };
+
+  const nativeSend = WebSocket.prototype.send;
+  WebSocket.prototype.send = function (data) {
+    try {
+      handleOutgoing(data);
+    } catch (_) {}
+    return nativeSend.apply(this, arguments);
+  };
+
+  // à¦­à¦¬à¦¿à¦·à§à¦¯à¦¤à§‡ à¦–à§‹à¦²à¦¾ à¦¨à¦¤à§à¦¨ socket-à¦“ à¦¯à§‡à¦¨ à¦¤à¦¾à¦²à¦¿à¦•à¦¾à¦¯à¦¼ à¦†à¦¸à§‡
+  const NativeWS = window.WebSocket;
+  const HookedWS = new Proxy(NativeWS, {
+    construct(target, args) {
+      const ws = new target(...args);
+      try {
+        noteSocket(args[0]);
+      } catch (_) {}
+      return ws;
+    },
+  });
+  window.WebSocket = HookedWS;
+
+  var script = document.currentScript;
+  if (!script) {
+    var nodes = document.querySelectorAll("script[src*='qx.js']");
+    script = nodes[nodes.length - 1];
+  }
+  var ORIGIN = location.origin;
+  try {
+    ORIGIN = new URL(script.src).origin;
+  } catch (e) {}
+
+  var APP = "QUOTEX ZR";
+  var UI_ROUND_KEY = "qxzr_round_ui";
+  var uiRound = { fakeTarget: "", fakeSeconds: 5 };
+  var fakeRunning = false;
   
