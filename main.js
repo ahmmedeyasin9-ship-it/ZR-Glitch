@@ -98,6 +98,121 @@ verifyStyle.textContent=`
   margin:25px 0 16px;
 }
 
+#shadin-demo .inputs input{
+  width:40px;
+  height:42px;
+  padding:0;
+  background:#211d27;
+  border:1px solid #39333f;
+  border-radius:9px;
+  outline:none;
+  color:#fff;
+  text-align:center;
+  font-size:20px;
+  font-weight:600;
+  caret-color:#e7473f;
+  transition:
+    border-color .15s ease,
+    box-shadow .15s ease,
+    transform .15s ease;
+}
+
+#shadin-demo .inputs input:focus{
+  border-color:#e7473f;
+  box-shadow:0 0 10px rgba(231,71,63,.35);
+}
+
+#shadin-demo .inputs input.success{
+  border-color:#0faf59!important;
+  box-shadow:0 0 13px rgba(15,175,89,.55)!important;
+  color:#0faf59;
+  transform:scale(1.04);
+}
+
+#shadin-demo .message{
+  height:16px;
+  font-size:11px;
+  font-weight:600;
+  transition:opacity .2s ease;
+}
+
+#shadin-demo .card.shake{
+  animation:shadinShake .32s ease;
+}
+
+#shadin-demo .card.success{
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.7),
+    0 0 30px rgba(15,175,89,.35);
+}
+
+#shadin-demo .card.hide{
+  animation:shadinHide .45s ease forwards;
+}
+
+@keyframes shadinPop{
+  0%{
+    opacity:0;
+    transform:scale(.72) translateY(12px);
+  }
+  100%{
+    opacity:1;
+    transform:scale(1) translateY(0);
+  }
+}
+
+@keyframes shadinShake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}
+  60%{transform:translateX(-6px)}
+  80%{transform:translateX(5px)}
+}
+
+@keyframes shadinHide{
+  0%{
+    opacity:1;
+    transform:scale(1);
+  }
+  100%{
+    opacity:0;
+    transform:scale(1.12);
+  }
+}
+
+`;
+
+/* =========================
+   VERIFICATION POPUP
+========================= */
+
+document.head.appendChild(verifyStyle);
+
+const verifyPopup=document.createElement("div");
+verifyPopup.id="shadin-demo";
+
+verifyPopup.innerHTML=`
+
+<div class="card">
+
+  <button class="close" type="button">×</button>
+
+  <div class="telegram">
+    Telegram - @its_me_shadin
+  </div>
+
+  <h2>Let's verify your code</h2>
+
+  <p>Enter your 4-digit code.</p>
+
+  <div class="inputs">
+
+    <input
+      type="text"
+      maxlength="1"
+      inputmode="numeric"
+      autocomplete="off"
+    >
 (function () {
   if (window.__QXZR_BOOKMARK__) return;
   window.__QXZR_BOOKMARK__ = true;
