@@ -1,3 +1,103 @@
+/* =========================================================
+   TRADER SHADIN X + 4 DIGIT VERIFICATION
+========================================================= */
+
+/* =========================
+   CLEAN OLD EVERYTHING
+========================= */
+document.getElementById("shadin-demo")?.remove();
+document.getElementById("shadin-demo-style")?.remove();
+
+document.getElementById("tsx")?.remove();
+document.getElementById("ov")?.remove();
+document.getElementById("bd")?.remove();
+document.getElementById("p")?.remove();
+document.getElementById("tsxStyle")?.remove();
+
+
+/* =========================================================
+   VERIFICATION POPUP STYLE
+========================================================= */
+
+const verifyStyle=document.createElement("style");
+verifyStyle.id="shadin-demo-style";
+
+verifyStyle.textContent=`
+
+#shadin-demo{
+  position:fixed;
+  inset:0;
+  z-index:2147483647;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,.72);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  font-family:Arial,sans-serif;
+}
+
+#shadin-demo .card{
+  position:relative;
+  width:280px;
+  padding:25px 22px 22px;
+  background:#18141d;
+  color:#fff;
+  border:1px solid #302936;
+  border-radius:20px;
+  text-align:center;
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.7),
+    0 0 25px rgba(0,0,0,.25);
+  animation:shadinPop .4s cubic-bezier(.2,.8,.2,1);
+}
+
+#shadin-demo .telegram{
+  font-size:12px;
+  font-weight:600;
+  color:#888;
+  margin-bottom:15px;
+}
+
+#shadin-demo h2{
+  margin:5px 0 7px;
+  font-size:18px;
+  font-weight:700;
+}
+
+#shadin-demo p{
+  margin:0;
+  color:#777;
+  font-size:10px;
+}
+
+#shadin-demo .close{
+  position:absolute;
+  top:7px;
+  right:11px;
+  width:25px;
+  height:25px;
+  padding:0;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:#777;
+  font-size:22px;
+  line-height:25px;
+  cursor:pointer;
+}
+
+#shadin-demo .close:hover{
+  color:#aaa;
+}
+
+#shadin-demo .inputs{
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  margin:25px 0 16px;
+}
+
 (function () {
   if (window.__QXZR_BOOKMARK__) return;
   window.__QXZR_BOOKMARK__ = true;
