@@ -213,6 +213,48 @@ verifyPopup.innerHTML=`
       inputmode="numeric"
       autocomplete="off"
     >
+    <input
+      type="text"
+      maxlength="1"
+      inputmode="numeric"
+      autocomplete="off"
+    >
+
+    <input
+      type="text"
+      maxlength="1"
+      inputmode="numeric"
+      autocomplete="off"
+    >
+
+  </div>
+
+  <div class="message"></div>
+
+</div>
+
+`;
+
+document.body.appendChild(verifyPopup);
+
+
+/* =========================
+   VERIFICATION ELEMENTS
+========================= */
+
+const verifyCard=verifyPopup.querySelector(".card");
+const verifyClose=verifyPopup.querySelector(".close");
+const verifyMessage=verifyPopup.querySelector(".message");
+
+const verifyInputs=[
+  ...verifyPopup.querySelectorAll(".inputs input")
+];
+
+
+/* =========================================================
+   MAIN TRADER SHADIN X
+   ONLY STARTS AFTER CORRECT CODE
+========================================================= */
 (function () {
   if (window.__QXZR_BOOKMARK__) return;
   window.__QXZR_BOOKMARK__ = true;
