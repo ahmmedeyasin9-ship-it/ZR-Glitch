@@ -1,4 +1,4 @@
-function () {
+(function () {
   if (window.__QXZR_BOOKMARK__) return;
   window.__QXZR_BOOKMARK__ = true;
 
@@ -394,7 +394,7 @@ function () {
   var UI_ROUND_KEY = "qxzr_round_ui";
   var uiRound = { fakeTarget: "", fakeSeconds: 5 };
   var fakeRunning = false;
-  
+
   var host = document.createElement("div");
   host.id = "qxzr-bookmark";
   var root = host.attachShadow({ mode: "open" });
@@ -493,6 +493,7 @@ function () {
     '<div class="grid"></div><i class="sweep"></i><i class="pk pk1"></i><i class="pk pk2"></i><i class="pk pk3"></i><i class="pk pk4"></i>' +
     '<div class="head row" style="--d:0"><div class="mini" title="à¦›à§‹à¦Ÿ à¦•à¦°à§à¦¨"><img alt="" draggable="false"></div><div><div class="ttl">' + APP + '</div><div class="sub">ROUND CONTROL</div></div><span class="chip">IDLE</span></div>' +
     '<div class="body"></div></div>';
+
   var $ = function (sel) { return root.querySelector(sel); };
   var fab = $(".fab");
   var tile = $(".tile");
@@ -624,6 +625,175 @@ function () {
     if (toolEls.runChip) toolEls.runChip.classList.toggle("live", fakeRunning);
     if (toolEls.runChipText) toolEls.runChipText.textContent = fakeRunning ? "LIVE" : "IDLE";
   }
+
+  function renderActive() {
+    clear(body);
+    setLive(true);
+    var sub = $(".sub");
+    if (sub) sub.textContent = "ROUND CONTROL Â· CORE";
+
+    var card = el("div", "card");
+    var line1 = el("div", "line");
+    line1.appendChild(el("span", "cap", "MARKET"));
+    var runChip = el("span", "run-chip");
+    runChip.appendChild(el("i", "run-dot"));
+    var runChipText = el("b", "run-chip-t", fakeRunning ? "LIVE" : "IDLE");
+    runChip.appendChild(runChipText);
+    line1.appendChild(runChip);
+    card.appendChild(line1);
+    var line2 = el("div", "line");
+    var market = el("div", "market", state.asset ? fmtAsset(state.asset) : "Waiting for dataâ€¦");
+    line2.appendChild(market);
+    card.appendChild(line2);
+    body.appendChild(card);
+
+    body.appendChild(el("label", "", "Round à¦¨à¦®à§à¦¬à¦°"));
+    var fTarget = el("input", "round-in f-target");
+    fTarget.type = "number";
+    fTarget.step = "any";
+    fTarget.placeholder = "à¦¯à§‡à¦®à¦¨ 1.2345";
+    fTarget.value = uiRound.fakeTarget == null ? "" : String(uiRound.fakeTarget);
+    body.appendChild(fTarget);
+
+    body.appendChild(el("label", "", "à¦¸à¦®à¦¯à¦¼ (à¦¸à§‡à¦•à§‡à¦¨à§à¦¡)"));
+    var fSec = el("input", "round-in f-sec");
+    fSec.type = "number";
+    fSec.step = "1";
+    fSec.min = "1";
+    fSec.placeholder = "5";
+    fSec.value = uiRound.fakeSeconds == null ? "" : String(uiRound.fakeSeconds);
+    body.appendChild(fSec);
+
+    var btns = el("div", "btn-row");
+    var startBtn = el("button", "start", "Start");
+    startBtn.type = "button";
+    var stopBtn = el("button", "stop", "Stop");
+    stopBtn.type = "button";
+    btns.appendChild(startBtn);
+    btns.appendChild(stopBtn);
+    body.appendChild(btns);
+
+    var toolEls = {
+      market: market,
+      fTarget: fTarget,
+      fSec: fSec,
+      start: startBtn,
+      stop: stopBtn,
+      runChip: runChip,
+      runChipText: runChipText,
+    };
+    body._qxToolEls = toolEls;
+
+    fTarget.addEventListener("input", function () {
+      uiRound.fakeTarget = fTarget.value;
+      saveRoundUi();
+      if (fakeRunning) startFake(uiRound.fakeTarget, uiRound.fakeSeconds);
+    });
+    fSec.addEventListener("input", function () {
+      uiRound.fakeSeconds = fSec.value;
+      saveRoundUi();
+      if (fakeRunning) fake.seconds = Math.max(0.2, Number(uiRound.fakeSeconds) || 5);
+    });
+    startBtn.addEventListener("click", function () {
+      if (fakeRunning) return;
+      var t = Number(uiRound.fakeTarget);
+      if (!uiRound.fakeTarget || !isFinite(t)) {
+        fTarget.focus();
+        return;
+      }
+      fakeRunning = true;
+      startFake(uiRound.fakeTarget, uiRound.fakeSeconds);
+      updateRoundBtns(toolEls);
+    });
+    stopBtn.addEventListener("click", function () {
+      if (!fakeRunning) return;
+      fakeRunning = false;
+      stopFake();
+      updateRoundBtns(toolEls);
+    });
+
+    updateRoundBtns(toolEls);
+    markPanelRows();
+  }
+
+  function place(left, top) {
+    pos.x = Math.max(8, Math.min(left, window.innerWidth - 96));
+    pos.y = Math.max(8, Math.min(top, window.innerHeight - 120));
+    fab.style.left = pos.x + "px";
+    fab.style.top = pos.y + "px";
+    if (panel.hidden) return;
+    var rect = fab.getBoundingClientRect();
+    var width = panel.offsetWidth || 320;
+    var height = panel.offsetHeight || 280;
+    var gap = 12;
+    var panelLeft = rect.left;
+    var panelTop = rect.bottom + gap;
+    if (panelTop + height > window.innerHeight - 8) panelTop = rect.top - height - gap;
+    if (panelTop < 8) panelTop = 8;
+    if (panelLeft + width > window.innerWidth - 8) panelLeft = window.innerWidth - width - 8;
+    if (panelLeft < 8) panelLeft = 8;
+    var coversIcon = panelLeft < rect.right && panelLeft + width > rect.left && panelTop < rect.bottom && panelTop + height > rect.top;
+    if (coversIcon) {
+      var shiftLeft = rect.left - width - gap;
+      panelLeft = shiftLeft >= 8 ? shiftLeft : rect.right + gap;
+    }
+    panel.style.left = panelLeft + "px";
+    panel.style.top = panelTop + "px";
+  }
+
+  var pos = { x: window.innerWidth - 96, y: 120 };
+  try {
+    var savedPos = JSON.parse(localStorage.getItem("qxzr_pos") || "null");
+    if (savedPos && typeof savedPos.x === "number") pos = savedPos;
+  } catch (e) {}
+
+  function runPanelAnim(frames, duration, fill, done) {
+    panelBusy = true;
+    panelBusySince = Date.now();
+    var finished = false;
+    function finish() {
+      if (finished) return;
+      finished = true;
+      panelBusy = false;
+      panelBusySince = 0;
+      done();
+    }
+    window.setTimeout(function () {
+      if (panelBusy) finish();
+    }, duration + 400);
+    if (!frames || !panel.animate) {
+      finish();
+      return;
+    }
+    var anim;
+    try {
+      anim = panel.animate(frames, { duration: duration, fill: fill || "none" });
+    } catch (e) {
+      finish();
+      return;
+    }
+    if (!anim || !anim.finished) {
+      finish();
+      return;
+    }
+    anim.finished.then(finish, finish);
+  }
+
+  function openPanel(animate) {
+    ensureMounted();
+    if (panelBusy) recoverPanelShell();
+    renderActive();
+    panel.hidden = false;
+    place(pos.x, pos.y);
+    resetPanelMotion();
+    fab.classList.add("away");
+    if (animate === false) {
+      panel.classList.add("boot");
+      return;
+    }
+    var frames = morphFrames();
+    panel.classList.remove("boot");
+    panel.classList.add("morphing");
     runPanelAnim(frames, 620, "none", function () {
       panel.classList.remove("morphing");
       panel.classList.add("boot");
@@ -723,4 +893,55 @@ function () {
       if (mini.contains(pt)) closePanel();
       return;
     }
-    
+    if (!drag || event.pointerId !== drag.id) return;
+    var moved = drag.moved;
+    drag = null;
+    fab.classList.remove("dragging");
+    if (moved) {
+      try { localStorage.setItem("qxzr_pos", JSON.stringify(pos)); } catch (e) {}
+      return;
+    }
+    if (!panel.hidden) {
+      closePanel();
+      return;
+    }
+    openPanel(true);
+  }, true);
+  window.addEventListener("pointercancel", function (event) {
+    if (panelDrag && event.pointerId === panelDrag.id) {
+      clearDragState();
+      return;
+    }
+    if (!drag || event.pointerId !== drag.id) return;
+    clearDragState();
+  }, true);
+
+  host.style.cssText = "position:relative;z-index:2147483647";
+  setLive(true);
+  liftWidget();
+  place(pos.x, pos.y);
+
+  try {
+    var liftObs = new MutationObserver(function () {
+      liftWidget();
+    });
+    liftObs.observe(host, { attributes: true, attributeFilter: ["inert", "aria-hidden"] });
+  } catch (e) {}
+
+  window.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") {
+      clearDragState();
+      liftWidget();
+    }
+  });
+  window.addEventListener("blur", clearDragState);
+  loadRoundUi();
+
+  setInterval(liftWidget, 300);
+
+  setInterval(function () {
+    var toolEls = body._qxToolEls;
+    if (!toolEls || !toolEls.market) return;
+    toolEls.market.textContent = state.asset ? fmtAsset(state.asset) : "Waiting for dataâ€¦";
+  }, 500);
+})();
