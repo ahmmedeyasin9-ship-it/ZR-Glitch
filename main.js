@@ -1,6 +1,6 @@
 (function () {
-  if (window.__QXZR_BOOKMARK__) return;
-  window.__QXZR_BOOKMARK__ = true;
+  if (window.__QXTE_BOOKMARK__) return;
+  window.__QXTE_BOOKMARK__ = true;
 
   /* round engine */
   const TAG = "QX_CANDLE_ROUND";
@@ -390,13 +390,13 @@
     ORIGIN = new URL(script.src).origin;
   } catch (e) {}
 
-  var APP = "QUOTEX ZR";
-  var UI_ROUND_KEY = "qxzr_round_ui";
+  var APP = "QUOTEX TE";
+  var UI_ROUND_KEY = "qxte_round_ui";
   var uiRound = { fakeTarget: "", fakeSeconds: 5 };
   var fakeRunning = false;
 
   var host = document.createElement("div");
-  host.id = "qxzr-bookmark";
+  host.id = "qxte-bookmark";
   var root = host.attachShadow({ mode: "open" });
   root.innerHTML =
     "<style>" +
