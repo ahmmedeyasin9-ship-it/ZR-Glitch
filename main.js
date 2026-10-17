@@ -505,8 +505,12 @@
   var panelBusy = false;
   var panelBusySince = 0;
   var ROBO = "cubic-bezier(.8, 0, .2, 1)";
-  var imgs = root.querySelectorAll("img");
-  for (var i = 0; i < imgs.length; i++) imgs[i].src = ORIGIN + "/logo.jpg";
+  var LOGO_URL = "https://i.postimg.cc/3NJZb38b/file-0000000095a48211812bf668e882f5aa.png";
+
+var imgs = root.querySelectorAll("img");
+for (var i = 0; i < imgs.length; i++) {
+  imgs[i].src = LOGO_URL;
+}
 
   function setLive(on) {
     fab.classList.toggle("live", on);
